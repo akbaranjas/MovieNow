@@ -1,5 +1,8 @@
 package akbaranjas.movieapp.app.activity;
 
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.net.Uri;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,8 +16,12 @@ import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
+
 import akbaranjas.movieapp.R;
 
+import akbaranjas.movieapp.app.data.MovieDBHelper;
+import akbaranjas.movieapp.app.pojo.Result;
 import akbaranjas.movieapp.app.pojo.detail.DetailMovie;
 import akbaranjas.movieapp.app.rest.APIClient;
 import akbaranjas.movieapp.app.rest.APIInterface;
@@ -74,6 +81,7 @@ public class DetailMovieActivity extends AppCompatActivity {
                 int statusCode = response.code();
                 if(statusCode==200) {
                     title = response.body().getTitle();
+                    DetailMovie detailMovie = response.body();
 
                     Picasso.with(DetailMovieActivity.this).load(MovieURL.BASE_URL_IMG + MovieURL.SIZE_IMAGE[3] + "/"
                             +  response.body().getBackdropPath()).into(imgCoverHeader);
@@ -87,6 +95,7 @@ public class DetailMovieActivity extends AppCompatActivity {
                     tvDesc.setText(response.body().getOverview());
 
                     getSupportActionBar().setTitle(title);
+                    insertDataDetail(detailMovie);
 
                     bottomLayout.setVisibility(View.GONE);
                 }else{
@@ -103,5 +112,37 @@ public class DetailMovieActivity extends AppCompatActivity {
                 Toast.makeText(DetailMovieActivity.this,"Can't establish the connection. .",Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void insertDataDetail(DetailMovie detailMovie){
+        ContentValues cv = new ContentValues();
+        cv.put(MovieDBHelper.COLUMN_MOVIE_ID, detailMovie.getId());
+        cv.put(MovieDBHelper.COLUMN_OVERVIEW, detailMovie.getOverview());
+        cv.put(MovieDBHelper.COLUMN_TITLE, detailMovie.getTitle());
+        cv.put(MovieDBHelper.COLUMN_RUNTIME, detailMovie.getRuntime());
+        cv.put(MovieDBHelper.COLUMN_RELEASE_DATE, detailMovie.getReleaseDate());
+        cv.put(MovieDBHelper.COLUMN_VOTE_AVERAGE, detailMovie.getVoteAverage());
+        cv.put(MovieDBHelper.COLUMN_BACKDROP_PATH, detailMovie.getBackdropPath());
+        cv.put(MovieDBHelper.COLUMN_POSTER_PATH, detailMovie.getPosterPath());
+
+        Uri uri = Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_MOVIE_DETAIL
+                + "/" + detailMovie.getId());
+        Cursor cursor = getContentResolver().query(uri ,
+                new String[]{
+                        MovieDBHelper.COLUMN_MOVIE_ID,
+                        MovieDBHelper.COLUMN_OVERVIEW,
+                        MovieDBHelper.COLUMN_TITLE,
+                        MovieDBHelper.COLUMN_RUNTIME
+                },
+                MovieDBHelper.TBL_MOVIE_DETAIL + "." + MovieDBHelper.COLUMN_MOVIE_ID + " = ? ",
+                new String[]{String.valueOf(detailMovie.getId())},
+                null
+                );
+        if(cursor.getCount() == 0) {
+            getContentResolver().insert(
+                    uri,
+                    cv);
+            getContentResolver().notifyChange(uri, null);
+        }
     }
 }

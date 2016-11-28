@@ -207,12 +207,6 @@ public class MainActivity extends AppCompatActivity implements OnMovieClickListe
         });
     }
 
-    private void restartActivity() {
-        Intent intent = getIntent();
-        finish();
-        startActivity(intent);
-    }
-
     @Override
     public void onMovieClick(int movieId) {
         Intent i = new Intent(MainActivity.this, DetailMovieActivity.class);
@@ -233,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements OnMovieClickListe
             contentValues[i] = cv;
         }
 
-        Uri uri = Uri.parse("content://"+ String.valueOf(R.string.content_authority) + "/" + MovieDBHelper.TBL_MOVIE
+        Uri uri = Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_MOVIE
                 + "/" + page);
         getContentResolver().delete(
                 uri,

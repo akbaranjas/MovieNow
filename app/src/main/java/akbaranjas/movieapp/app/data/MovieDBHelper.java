@@ -31,7 +31,7 @@ public class MovieDBHelper extends SQLiteOpenHelper {
             COLUMN_TITLE + " text, " +
             COLUMN_POSTER_PATH + " text, " +
             COLUMN_VOTE_AVERAGE + " real, " +
-            COLUMN_PAGE + " int " +
+            COLUMN_PAGE + " int, " +
             "unique ("+ COLUMN_MOVIE_ID + ") on conflict replace);";
 
     private static final String CREATE_TBL_MOVIE_DETAIL ="create table " + TBL_MOVIE_DETAIL + " (" +
@@ -43,7 +43,7 @@ public class MovieDBHelper extends SQLiteOpenHelper {
             COLUMN_VOTE_AVERAGE + " real, " +
             COLUMN_BACKDROP_PATH + " text, " +
             COLUMN_POSTER_PATH + " text, " +
-            COLUMN_AS_FAVOURITE + " int " +
+            COLUMN_AS_FAVOURITE + " int, " +
             "unique ("+ COLUMN_MOVIE_ID + ") on conflict replace);";
 
     public MovieDBHelper(Context context) {

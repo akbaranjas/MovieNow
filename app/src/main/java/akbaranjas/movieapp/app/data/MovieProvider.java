@@ -23,10 +23,11 @@ public class MovieProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
+        String content_authority = getContext().getResources().getString(R.string.content_authority);
         movieDBHelper = new MovieDBHelper(getContext());
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-        uriMatcher.addURI(String.valueOf(R.string.content_authority), MovieDBHelper.TBL_MOVIE + "/#", MOVIE_LIST);
-        uriMatcher.addURI(String.valueOf(R.string.content_authority), MovieDBHelper.TBL_MOVIE_DETAIL + "/#", MOVIE_DETAIL);
+        uriMatcher.addURI(content_authority , MovieDBHelper.TBL_MOVIE + "/#", MOVIE_LIST);
+        uriMatcher.addURI(content_authority, MovieDBHelper.TBL_MOVIE_DETAIL + "/#", MOVIE_DETAIL);
         return true;
     }
 
