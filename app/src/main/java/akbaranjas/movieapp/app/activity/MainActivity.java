@@ -1,7 +1,9 @@
 package akbaranjas.movieapp.app.activity;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -21,6 +23,7 @@ import java.util.List;
 import akbaranjas.movieapp.R;
 import akbaranjas.movieapp.app.adapter.EndlessRecyclerViewScrollListener;
 import akbaranjas.movieapp.app.adapter.MovieGridAdapter;
+import akbaranjas.movieapp.app.data.MovieDBHelper;
 import akbaranjas.movieapp.app.listener.OnMovieClickListener;
 import akbaranjas.movieapp.app.pojo.MovieList;
 import akbaranjas.movieapp.app.pojo.Result;
@@ -50,7 +53,15 @@ public class MainActivity extends AppCompatActivity implements OnMovieClickListe
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setIcon(R.mipmap.ic_launcher);
+
+        recyclerView = (RecyclerView)findViewById(R.id.recycler_view_movie);
         bottomLayout = (RelativeLayout) findViewById(R.id.loadingLayout);
+
+        recyclerView.setHasFixedSize(true);
+        layoutManager = new GridLayoutManager(getApplicationContext(),2);
+        recyclerView.setLayoutManager(layoutManager);
+        movieGridAdapter = new MovieGridAdapter(null, MainActivity.this, MainActivity.this);
+        recyclerView.setAdapter(movieGridAdapter);
 
         updateGrid();
 
@@ -99,35 +110,20 @@ public class MainActivity extends AppCompatActivity implements OnMovieClickListe
             public void onResponse(Call<MovieList> call, Response<MovieList> response) {
                 int statusCode = response.code();
                 if(statusCode==200) {
-                    recyclerView = (RecyclerView)findViewById(R.id.recycler_view_movie);
-                    recyclerView.setHasFixedSize(true);
-                    layoutManager = new GridLayoutManager(getApplicationContext(),2);
-                    recyclerView.setLayoutManager(layoutManager);
 
                     if(movies != null){
                         movies.clear();
                     }
 
-                    page = response.body().getPage() + 1;
                     movies = response.body().getResults();
-                    movieGridAdapter = new MovieGridAdapter(movies, R.layout.grid_item_movie, MainActivity.this, MainActivity.this);
 
-                    recyclerView.setAdapter(movieGridAdapter);
+                    movieGridAdapter.updateList(movies);
+                    //movieGridAdapter.notifyItemRangeInserted(0, movies.size() - 1);
+                    movieGridAdapter.notifyDataSetChanged();
 
-                    movieGridAdapter.notifyItemRangeInserted(0, movies.size() - 1);
+                    insertData(movies, page);
+                    page = response.body().getPage() + 1;
 
-                    if(scrollListener != null)
-                        scrollListener.resetState();
-
-                    scrollListener = new EndlessRecyclerViewScrollListener(layoutManager) {
-                        @Override
-                        public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
-
-                            addMovieList();
-                        }
-
-                    };
-                    recyclerView.addOnScrollListener(scrollListener);
                     bottomLayout.setVisibility(View.GONE);
                 }else{
                     Toast.makeText(MainActivity.this,"Can't establish the connection, Response Code [" + statusCode + "]",Toast.LENGTH_SHORT).show();
@@ -147,13 +143,29 @@ public class MainActivity extends AppCompatActivity implements OnMovieClickListe
 
     private void updateGrid(){
         SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        String movieOrder = SP.getString("movieOrder","top_rated");
+        String movieOrder = SP.getString("movieOrder","popular");
         if(movieOrder.equalsIgnoreCase("popular")){
             getSupportActionBar().setTitle(R.string.txt_popular);
             order = "popular";
         }else {
             getSupportActionBar().setTitle(R.string.txt_top_rated);
             order = "top_rated";
+        }
+
+        if(scrollListener != null)
+            scrollListener.resetState();
+
+        if(scrollListener == null) {
+            scrollListener = new EndlessRecyclerViewScrollListener(layoutManager) {
+                @Override
+                public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+
+                    addMovieList();
+                }
+
+            };
+
+            recyclerView.addOnScrollListener(scrollListener);
         }
         init(order);
 
@@ -170,8 +182,9 @@ public class MainActivity extends AppCompatActivity implements OnMovieClickListe
             public void onResponse(Call<MovieList> call, Response<MovieList> response) {
                 int statusCode = response.code();
                 if(statusCode==200) {
-                    page = response.body().getPage() + 1;
                     List<Result> moreMovies = response.body().getResults();
+                    insertData(moreMovies, page);
+                    page = response.body().getPage() + 1;
                     int curSize = movieGridAdapter.getItemCount();
                     movies.addAll(moreMovies);
 
@@ -205,5 +218,34 @@ public class MainActivity extends AppCompatActivity implements OnMovieClickListe
         Intent i = new Intent(MainActivity.this, DetailMovieActivity.class);
         i.putExtra(DetailMovieActivity.EXTRA_MOVIE_ID, movieId);
         this.startActivity(i);
+    }
+
+    private void insertData(List<Result> movies, int page){
+        ContentValues[] contentValues = new ContentValues[movies.size()];
+        for(int i = 0;i < movies.size(); i++){
+            ContentValues cv = new ContentValues();
+            cv.put(MovieDBHelper.COLUMN_MOVIE_ID, movies.get(i).getId());
+            cv.put(MovieDBHelper.COLUMN_OVERVIEW, movies.get(i).getOverview());
+            cv.put(MovieDBHelper.COLUMN_TITLE, movies.get(i).getTitle());
+            cv.put(MovieDBHelper.COLUMN_POSTER_PATH, movies.get(i).getPosterPath());
+            cv.put(MovieDBHelper.COLUMN_VOTE_AVERAGE, movies.get(i).getVoteAverage());
+            cv.put(MovieDBHelper.COLUMN_PAGE, page);
+            contentValues[i] = cv;
+        }
+
+        Uri uri = Uri.parse("content://"+ String.valueOf(R.string.content_authority) + "/" + MovieDBHelper.TBL_MOVIE
+                + "/" + page);
+        getContentResolver().delete(
+                uri,
+                MovieDBHelper.TBL_MOVIE + "." + MovieDBHelper.COLUMN_PAGE
+                        + " = ?"
+                ,
+                new String[] {String.valueOf(page)}
+        );
+        getContentResolver().bulkInsert(
+                uri,
+                contentValues);
+        getContentResolver().notifyChange(uri, null);
+
     }
 }

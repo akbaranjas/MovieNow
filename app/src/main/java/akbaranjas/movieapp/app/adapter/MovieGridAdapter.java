@@ -28,15 +28,17 @@ public class MovieGridAdapter extends RecyclerView.Adapter<MovieGridAdapter.Movi
     public static final int TYPE_LOADING = 1;
     public static final int TYPE_ITEM = 0;
     private List<Result> movies;
-    private int layout;
     private Context context;
     OnMovieClickListener onMovieClickListener;
 
-    public MovieGridAdapter(List<Result> movies, int layout, Context context, OnMovieClickListener listener) {
+    public MovieGridAdapter(List<Result> movies, Context context, OnMovieClickListener listener) {
         this.movies = movies;
-        this.layout = layout;
         this.context = context;
         this.onMovieClickListener = listener;
+    }
+
+    public void updateList(List<Result> movies){
+        this.movies = movies;
     }
 
 
@@ -63,7 +65,11 @@ public class MovieGridAdapter extends RecyclerView.Adapter<MovieGridAdapter.Movi
 
     @Override
     public int getItemCount() {
-        return movies.size();
+        if(movies != null) {
+            return movies.size();
+        }else {
+            return 0;
+        }
     }
 
     public class MovieViewHolder extends RecyclerView.ViewHolder
