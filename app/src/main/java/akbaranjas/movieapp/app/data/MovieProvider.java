@@ -18,6 +18,7 @@ import akbaranjas.movieapp.R;
 public class MovieProvider extends ContentProvider {
     public static final int MOVIE_LIST = 100;
     public static final int MOVIE_DETAIL = 200;
+    public static final int MOVIE_VIDEOS = 300;
     MovieDBHelper movieDBHelper;
     UriMatcher uriMatcher;
 
@@ -28,6 +29,7 @@ public class MovieProvider extends ContentProvider {
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         uriMatcher.addURI(content_authority , MovieDBHelper.TBL_MOVIE + "/#", MOVIE_LIST);
         uriMatcher.addURI(content_authority, MovieDBHelper.TBL_MOVIE_DETAIL + "/#", MOVIE_DETAIL);
+        uriMatcher.addURI(content_authority, MovieDBHelper.TBL_VIDEOS + "/#", MOVIE_VIDEOS);
         return true;
     }
 
@@ -62,6 +64,19 @@ public class MovieProvider extends ContentProvider {
                 );
                 retCursor.setNotificationUri(getContext().getContentResolver(), uri);
                 break;
+
+            case MOVIE_VIDEOS:
+                retCursor = movieDBHelper.getReadableDatabase().query(
+                        MovieDBHelper.TBL_VIDEOS,
+                        projection,
+                        MovieDBHelper.TBL_VIDEOS + "." + MovieDBHelper.COLUMN_MOVIE_ID + " = ?",
+                        new String[] { uri.getPathSegments().get(1) },
+                        null,
+                        null,
+                        sortorder
+                );
+                retCursor.setNotificationUri(getContext().getContentResolver(), uri);
+                break;
         }
 
         return retCursor;
@@ -78,6 +93,9 @@ public class MovieProvider extends ContentProvider {
             case MOVIE_DETAIL:
                 return ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + String.valueOf(R.string.content_authority) + "/"
                         + MovieDBHelper.TBL_MOVIE_DETAIL + "/";
+            case MOVIE_VIDEOS:
+                return ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + String.valueOf(R.string.content_authority) + "/"
+                        + MovieDBHelper.TBL_VIDEOS + "/";
         }
         return null;
     }
@@ -125,6 +143,14 @@ public class MovieProvider extends ContentProvider {
                         selectionArgs
                 );
                 return i;
+
+            case MOVIE_VIDEOS:
+                int z = movieDBHelper.getWritableDatabase().delete(
+                        MovieDBHelper.TBL_VIDEOS,
+                        selection,
+                        selectionArgs
+                );
+                return z;
 
         }
         return 0;
@@ -174,6 +200,31 @@ public class MovieProvider extends ContentProvider {
                     writableDatabase.endTransaction();
                 }
                 return returnCount;
+
+
+            case MOVIE_VIDEOS:
+                int count = 0;
+
+                SQLiteDatabase db= movieDBHelper.getWritableDatabase();
+                db.beginTransaction();
+                try {
+                    for (ContentValues cv : values) {
+                        db.insert(
+                                MovieDBHelper.TBL_VIDEOS,
+                                null,
+                                cv
+                        );
+                        count++;
+                    }
+                    db.setTransactionSuccessful();
+                }
+                catch (Exception e) {
+                    count = 0;
+                }
+                finally {
+                    db.endTransaction();
+                }
+                return count;
         }
         return 0;
     }

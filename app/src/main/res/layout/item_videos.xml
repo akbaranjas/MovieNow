@@ -6,13 +6,9 @@
     android:clickable="true"
     android:focusable="true"
     android:background="?attr/selectableItemBackground"
-    cardUseCompatPadding="true">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/tv_title_item_video"
-            android:textAppearance="@style/TextAppearance.AppCompat.Title" />
+    cardUseCompatPadding="true"
+    android:layout_margin="5dp"
+    android:padding="5dp">
 
         <com.google.android.youtube.player.YouTubeThumbnailView
             android:id="@+id/youtube_thumbnail"
@@ -26,6 +22,16 @@
             android:layout_height="250dp"
             android:background="@color/color_background_transparent"
             android:visibility="visible">
+
+            <TextView
+                android:layout_alignParentTop="true"
+                android:gravity="left"
+                android:layout_margin="4dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/tv_title_item_video"
+                android:textAppearance="@style/TextAppearance.AppCompat.Title"
+                android:textColor="#FFF"/>
 
             <ImageView android:id="@+id/btnYoutube_player"
                 android:layout_width="match_parent"

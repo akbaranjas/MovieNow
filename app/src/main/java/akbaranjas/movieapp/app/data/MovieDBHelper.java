@@ -19,11 +19,14 @@ public class MovieDBHelper extends SQLiteOpenHelper {
     public static final String COLUMN_PAGE = "page";
     public static final String TBL_MOVIE = "tbl_movie";
     public static final String TBL_MOVIE_DETAIL = "tbl_movie_detail";
+    public static final String TBL_VIDEOS = "tbl_videos";
     public static final String COLUMN_POSTER_PATH = "poster_path";
     public static final String COLUMN_AS_FAVOURITE = "as_favourite";
     public static final String COLUMN_BACKDROP_PATH = "backdrop_path";
     public static final String COLUMN_RUNTIME = "runtime";
     public static final String COLUMN_RELEASE_DATE = "release_date";
+    public static final String COLUMN_KEY_VIDEOS = "key";
+    public static final String COLUMN_NAME_VIDEOS = "name";
 
     private static final String CREATE_TBL_MOVIE ="create table " + TBL_MOVIE + " (" +
             COLUMN_MOVIE_ID + " int, " +
@@ -46,6 +49,12 @@ public class MovieDBHelper extends SQLiteOpenHelper {
             COLUMN_AS_FAVOURITE + " int, " +
             "unique ("+ COLUMN_MOVIE_ID + ") on conflict replace);";
 
+    private static final String CREATE_TBL_VIDEOS ="create table " + TBL_VIDEOS + " (" +
+            COLUMN_MOVIE_ID + " int, " +
+            COLUMN_KEY_VIDEOS + " text, " +
+            COLUMN_NAME_VIDEOS + " text, " +
+            "unique ("+ COLUMN_MOVIE_ID + ") on conflict replace);";
+
     public MovieDBHelper(Context context) {
         super(context, MOVIE_DB, null, VERSION);
     }
@@ -54,6 +63,7 @@ public class MovieDBHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         sqLiteDatabase.execSQL(CREATE_TBL_MOVIE);
         sqLiteDatabase.execSQL(CREATE_TBL_MOVIE_DETAIL);
+        sqLiteDatabase.execSQL(CREATE_TBL_VIDEOS);
     }
 
     @Override
@@ -69,6 +79,7 @@ public class MovieDBHelper extends SQLiteOpenHelper {
     private void buatUlangDB(SQLiteDatabase sqLiteDatabase) {
         sqLiteDatabase.execSQL("drop table if exists " + TBL_MOVIE);
         sqLiteDatabase.execSQL("drop table if exists " + TBL_MOVIE_DETAIL);
+        sqLiteDatabase.execSQL("drop table if exists " + TBL_VIDEOS);
 
         onCreate(sqLiteDatabase);
     }

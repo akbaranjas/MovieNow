@@ -1,6 +1,10 @@
 package akbaranjas.movieapp.app.activity;
 
+import android.app.LoaderManager;
 import android.content.ContentValues;
+import android.content.CursorLoader;
+import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.support.v7.app.ActionBar;
@@ -16,14 +20,17 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.youtube.player.YouTubeStandalonePlayer;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
+import java.util.StringTokenizer;
 
 import akbaranjas.movieapp.R;
 
 import akbaranjas.movieapp.app.adapter.VideosAdapter;
 import akbaranjas.movieapp.app.data.MovieDBHelper;
+import akbaranjas.movieapp.app.listener.OnPlayClickListener;
 import akbaranjas.movieapp.app.pojo.MovieList;
 import akbaranjas.movieapp.app.pojo.Result;
 import akbaranjas.movieapp.app.pojo.detail.DetailMovie;
@@ -36,11 +43,13 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class DetailMovieActivity extends AppCompatActivity {
+public class DetailMovieActivity extends AppCompatActivity implements
+        OnPlayClickListener , LoaderManager.LoaderCallbacks<Cursor>{
 
     private static final String TAG = DetailMovieActivity.class.getSimpleName();
 
     public static final String EXTRA_MOVIE_ID = "movie_id";
+    public static final int LOADER_DETAIL_MOVIE = 100;
     private int movieID;
     private ImageView imgCoverHeader;
     private ImageView imgPosterHeader;
@@ -71,13 +80,13 @@ public class DetailMovieActivity extends AppCompatActivity {
         rv_videos = (RecyclerView) findViewById(R.id.recycler_view_videos);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         rv_videos.setLayoutManager(linearLayoutManager);
-        videosAdapter = new VideosAdapter(DetailMovieActivity.this,null,true);
+        videosAdapter = new VideosAdapter(this,null,true,this);
         rv_videos.setAdapter(videosAdapter);
         rv_videos.setNestedScrollingEnabled(false);
 
         bottomLayout = (RelativeLayout) findViewById(R.id.loadingLayout);
 
-
+        getLoaderManager().initLoader(LOADER_DETAIL_MOVIE, null, this);
         this.init();
 
         //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -96,21 +105,7 @@ public class DetailMovieActivity extends AppCompatActivity {
             public void onResponse(Call<DetailMovie> call, Response<DetailMovie> response) {
                 int statusCode = response.code();
                 if(statusCode==200) {
-                    title = response.body().getTitle();
                     DetailMovie detailMovie = response.body();
-
-                    Picasso.with(DetailMovieActivity.this).load(MovieURL.BASE_URL_IMG + MovieURL.SIZE_IMAGE[3] + "/"
-                            +  response.body().getBackdropPath()).into(imgCoverHeader);
-                    Picasso.with(DetailMovieActivity.this).load(MovieURL.BASE_URL_IMG + MovieURL.SIZE_IMAGE[2] + "/"
-                            +  response.body().getPosterPath()).into(imgPosterHeader);
-                    tv_yearMin.setText("("+
-                            response.body().getReleaseDate().substring(0,4) + ")" + " "
-                            + String.valueOf(response.body().getRuntime()) + " min");
-                    tvTitle.setText(title);
-                    tvRating.setText(String.valueOf(response.body().getVoteAverage()) + "/10");
-                    tvDesc.setText(response.body().getOverview());
-
-                    getSupportActionBar().setTitle(title);
                     insertDataDetail(detailMovie);
 
                     bottomLayout.setVisibility(View.GONE);
@@ -141,6 +136,8 @@ public class DetailMovieActivity extends AppCompatActivity {
                     }
 
                     videosList = response.body().getResults();
+
+                    insertVideos(videosList, response.body().getId());
 
                     videosAdapter.updateList(videosList);
                     //movieGridAdapter.notifyItemRangeInserted(0, movies.size() - 1);
@@ -193,5 +190,93 @@ public class DetailMovieActivity extends AppCompatActivity {
                     cv);
             getContentResolver().notifyChange(uri, null);
         }
+    }
+
+    private void insertVideos(List<ResultVideo> videos , int id){
+        ContentValues[] contentValues = new ContentValues[videos.size()];
+        for(int i = 0;i < videos.size(); i++){
+            ContentValues cv = new ContentValues();
+            cv.put(MovieDBHelper.COLUMN_MOVIE_ID, id);
+            cv.put(MovieDBHelper.COLUMN_KEY_VIDEOS, videos.get(i).getKey());
+            cv.put(MovieDBHelper.COLUMN_NAME_VIDEOS, videos.get(i).getName());
+            contentValues[i] = cv;
+        }
+
+        Uri uri = Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_VIDEOS
+                + "/" + id);
+        getContentResolver().delete(
+                uri,
+                MovieDBHelper.TBL_VIDEOS + "." + MovieDBHelper.COLUMN_MOVIE_ID
+                        + " = ?"
+                ,
+                new String[] {String.valueOf(id)}
+        );
+        getContentResolver().bulkInsert(
+                uri,
+                contentValues);
+        getContentResolver().notifyChange(uri, null);
+
+    }
+
+    @Override
+    public void onYoutubeClick(String videosID) {
+        Intent intent = YouTubeStandalonePlayer.createVideoIntent(this, MovieURL.API_KEY_GOOGLE, videosID);
+        DetailMovieActivity.this
+                .startActivity(intent);
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
+        if (i == LOADER_DETAIL_MOVIE) {
+            return new CursorLoader(
+                    DetailMovieActivity.this,
+                    Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_MOVIE_DETAIL
+                            + "/" + movieID ),
+                    new String[]{
+                            MovieDBHelper.COLUMN_MOVIE_ID,
+                            MovieDBHelper.COLUMN_OVERVIEW,
+                            MovieDBHelper.COLUMN_TITLE,
+                            MovieDBHelper.COLUMN_RUNTIME,
+                            MovieDBHelper.COLUMN_RELEASE_DATE,
+                            MovieDBHelper.COLUMN_VOTE_AVERAGE,
+                            MovieDBHelper.COLUMN_OVERVIEW,
+                            MovieDBHelper.COLUMN_BACKDROP_PATH,
+                            MovieDBHelper.COLUMN_POSTER_PATH
+                    },
+                    MovieDBHelper.TBL_MOVIE_DETAIL + MovieDBHelper.COLUMN_MOVIE_ID + " = ?",
+                    new String[] {String.valueOf(movieID)},
+                    null
+            );
+        }
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        if(loader.getId() == LOADER_DETAIL_MOVIE) {
+            if (cursor != null && cursor.getCount() > 0) {
+
+                //cursor is always 1
+                cursor.moveToPosition(0);
+                title = cursor.getString(2);
+                Picasso.with(DetailMovieActivity.this).load(MovieURL.BASE_URL_IMG + MovieURL.SIZE_IMAGE[3] + "/"
+                        + cursor.getString(7)).into(imgCoverHeader);
+                Picasso.with(DetailMovieActivity.this).load(MovieURL.BASE_URL_IMG + MovieURL.SIZE_IMAGE[2] + "/"
+                        + cursor.getString(8)).into(imgPosterHeader);
+                tv_yearMin.setText("(" +
+                        cursor.getString(4).substring(0, 4) + ")" + " "
+                        + String.valueOf(3) + " min");
+                tvTitle.setText(title);
+                tvRating.setText(String.valueOf(cursor.getDouble(5)) + "/10");
+                tvDesc.setText(cursor.getString(1));
+
+                getSupportActionBar().setTitle(title);
+            }
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
     }
 }
