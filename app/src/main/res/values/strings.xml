@@ -7,5 +7,6 @@
     <string name="txt_top_rated">Top Rated</string>
     <string name="title_activity_settings">Settings</string>
     <string name="content_authority">com.akbaranjas.movieapp</string>
+    <string name="videos_text">Videos</string>
 
 </resources>

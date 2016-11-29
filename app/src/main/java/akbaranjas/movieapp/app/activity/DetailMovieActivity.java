@@ -6,6 +6,8 @@ import android.net.Uri;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
@@ -20,9 +22,13 @@ import java.util.List;
 
 import akbaranjas.movieapp.R;
 
+import akbaranjas.movieapp.app.adapter.VideosAdapter;
 import akbaranjas.movieapp.app.data.MovieDBHelper;
+import akbaranjas.movieapp.app.pojo.MovieList;
 import akbaranjas.movieapp.app.pojo.Result;
 import akbaranjas.movieapp.app.pojo.detail.DetailMovie;
+import akbaranjas.movieapp.app.pojo.video.ResultVideo;
+import akbaranjas.movieapp.app.pojo.video.Videos;
 import akbaranjas.movieapp.app.rest.APIClient;
 import akbaranjas.movieapp.app.rest.APIInterface;
 import akbaranjas.movieapp.app.url.MovieURL;
@@ -44,6 +50,9 @@ public class DetailMovieActivity extends AppCompatActivity {
     private TextView tvDesc;
     private String title = "";
     private RelativeLayout bottomLayout;
+    private static RecyclerView rv_videos;
+    private static VideosAdapter videosAdapter;
+    List<ResultVideo> videosList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,8 +61,6 @@ public class DetailMovieActivity extends AppCompatActivity {
         movieID = getIntent().getIntExtra(EXTRA_MOVIE_ID, 0 );
 
         setContentView(R.layout.activity_detail_movie);
-//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
 
         imgCoverHeader = (ImageView) findViewById(R.id.img_header_cover);
         imgPosterHeader = (ImageView) findViewById(R.id.img_poster_header);
@@ -61,7 +68,15 @@ public class DetailMovieActivity extends AppCompatActivity {
         tvTitle = (TextView) findViewById(R.id.tv_title_detail);
         tvRating = (TextView) findViewById(R.id.tv_rating_movie_detail);
         tvDesc = (TextView) findViewById(R.id.tv_desc_detail);
+        rv_videos = (RecyclerView) findViewById(R.id.recycler_view_videos);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        rv_videos.setLayoutManager(linearLayoutManager);
+        videosAdapter = new VideosAdapter(DetailMovieActivity.this,null,true);
+        rv_videos.setAdapter(videosAdapter);
+        rv_videos.setNestedScrollingEnabled(false);
+
         bottomLayout = (RelativeLayout) findViewById(R.id.loadingLayout);
+
 
         this.init();
 
@@ -75,6 +90,7 @@ public class DetailMovieActivity extends AppCompatActivity {
         APIInterface apiService =
                 APIClient.getClient().create(APIInterface.class);
         Call<DetailMovie> call = apiService.getMovieDetails(movieID,MovieURL.APP_KEY_ID);
+        Call<Videos> callVid = apiService.getVideoList(movieID,MovieURL.APP_KEY_ID);
         call.enqueue(new Callback<DetailMovie>() {
             @Override
             public void onResponse(Call<DetailMovie> call, Response<DetailMovie> response) {
@@ -110,6 +126,39 @@ public class DetailMovieActivity extends AppCompatActivity {
                 // Log error here since request failed
                 Log.e(TAG, t.toString());
                 Toast.makeText(DetailMovieActivity.this,"Can't establish the connection. .",Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        //the video time
+        callVid.enqueue(new Callback<Videos>() {
+            @Override
+            public void onResponse(Call<Videos> call, Response<Videos> response) {
+                int statusCode = response.code();
+                if(statusCode==200) {
+
+                    if(videosList != null){
+                        videosList.clear();
+                    }
+
+                    videosList = response.body().getResults();
+
+                    videosAdapter.updateList(videosList);
+                    //movieGridAdapter.notifyItemRangeInserted(0, movies.size() - 1);
+                    videosAdapter.notifyDataSetChanged();
+
+                    //bottomLayout.setVisibility(View.GONE);
+                }else{
+                    Toast.makeText(DetailMovieActivity.this,"Can't establish the connection, Response Code [" + statusCode + "]",Toast.LENGTH_SHORT).show();
+                    bottomLayout.setVisibility(View.GONE);
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<Videos> call, Throwable t) {
+                // Log error here since request failed
+                Toast.makeText(DetailMovieActivity.this,"Can't establish the connection. .",Toast.LENGTH_SHORT).show();
+                Log.e(TAG, t.toString());
             }
         });
     }
