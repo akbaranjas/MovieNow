@@ -1,9 +1,6 @@
 package akbaranjas.movieapp.app.adapter;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
@@ -15,16 +12,11 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.google.android.youtube.player.YouTubeInitializationResult;
-import com.google.android.youtube.player.YouTubeStandalonePlayer;
 import com.google.android.youtube.player.YouTubeThumbnailLoader;
 import com.google.android.youtube.player.YouTubeThumbnailView;
 
-import java.util.List;
-
 import akbaranjas.movieapp.R;
 import akbaranjas.movieapp.app.listener.OnPlayClickListener;
-import akbaranjas.movieapp.app.pojo.Result;
-import akbaranjas.movieapp.app.pojo.video.ResultVideo;
 import akbaranjas.movieapp.app.url.MovieURL;
 
 /**

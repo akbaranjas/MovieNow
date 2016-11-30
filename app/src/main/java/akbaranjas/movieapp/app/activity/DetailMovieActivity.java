@@ -20,8 +20,11 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.ivbaranov.mfb.MaterialFavoriteButton;
 import com.google.android.youtube.player.YouTubeStandalonePlayer;
 import com.squareup.picasso.Picasso;
+
+import org.w3c.dom.Text;
 
 import java.util.List;
 import java.util.StringTokenizer;
@@ -62,6 +65,8 @@ public class DetailMovieActivity extends AppCompatActivity implements
     private RelativeLayout bottomLayout;
     private static RecyclerView rv_videos;
     private static VideosAdapter videosAdapter;
+    private MaterialFavoriteButton btnfav;
+    private TextView tv_add_fav;
     List<ResultVideo> videosList;
 
     @Override
@@ -79,20 +84,30 @@ public class DetailMovieActivity extends AppCompatActivity implements
         tvRating = (TextView) findViewById(R.id.tv_rating_movie_detail);
         tvDesc = (TextView) findViewById(R.id.tv_desc_detail);
         rv_videos = (RecyclerView) findViewById(R.id.recycler_view_videos);
+        tv_add_fav = (TextView) findViewById(R.id.tv_fav);
+
+        btnfav = (MaterialFavoriteButton) findViewById(R.id.btn_add_fav);
+
+        btnfav.setOnFavoriteChangeListener(
+                new MaterialFavoriteButton.OnFavoriteChangeListener() {
+                    @Override
+                    public void onFavoriteChanged(MaterialFavoriteButton buttonView, boolean favorite) {
+                        addFav(favorite);
+                    }
+                }
+        );
+
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         rv_videos.setLayoutManager(linearLayoutManager);
         videosAdapter = new VideosAdapter(this,null,true,this);
         rv_videos.setAdapter(videosAdapter);
         rv_videos.setNestedScrollingEnabled(false);
 
+
         bottomLayout = (RelativeLayout) findViewById(R.id.loadingLayout);
 
         getLoaderManager().initLoader(LOADER_DETAIL_MOVIE, null, this);
         getLoaderManager().initLoader(LOADER_VIDEOS, null, this);
-
-        this.init();
-
-        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 
     }
@@ -165,6 +180,7 @@ public class DetailMovieActivity extends AppCompatActivity implements
         cv.put(MovieDBHelper.COLUMN_VOTE_AVERAGE, detailMovie.getVoteAverage());
         cv.put(MovieDBHelper.COLUMN_BACKDROP_PATH, detailMovie.getBackdropPath());
         cv.put(MovieDBHelper.COLUMN_POSTER_PATH, detailMovie.getPosterPath());
+        cv.put(MovieDBHelper.COLUMN_AS_FAVOURITE, 0);
 
         Uri uri = Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_MOVIE_DETAIL
                 + "/" + detailMovie.getId());
@@ -236,28 +252,29 @@ public class DetailMovieActivity extends AppCompatActivity implements
                             MovieDBHelper.COLUMN_VOTE_AVERAGE,
                             MovieDBHelper.COLUMN_OVERVIEW,
                             MovieDBHelper.COLUMN_BACKDROP_PATH,
-                            MovieDBHelper.COLUMN_POSTER_PATH
+                            MovieDBHelper.COLUMN_POSTER_PATH,
+                            MovieDBHelper.COLUMN_AS_FAVOURITE
                     },
                     MovieDBHelper.TBL_MOVIE_DETAIL +  "." + MovieDBHelper.COLUMN_MOVIE_ID + " = ?",
                     new String[] {String.valueOf(movieID)},
                     null
             );
-//        }else if (i == LOADER_VIDEOS){
-//            return new CursorLoader(
-//                    DetailMovieActivity.this,
-//                    Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_VIDEOS
-//                            + "/" + movieID ),
-//                    new String[]{
-//                            MovieDBHelper.COLUMN_MOVIE_ID,
-//                            MovieDBHelper.COLUMN_KEY_VIDEOS,
-//                            MovieDBHelper.COLUMN_NAME_VIDEOS,
-//
-//                    },
-//                    MovieDBHelper.TBL_VIDEOS + "." +  MovieDBHelper.COLUMN_MOVIE_ID + " = ?",
-//                    new String[] {String.valueOf(movieID)},
-//                    null
-//            );
-//
+        }else if (i == LOADER_VIDEOS){
+            return new CursorLoader(
+                    DetailMovieActivity.this,
+                    Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_VIDEOS
+                            + "/" + movieID ),
+                    new String[]{
+                            MovieDBHelper.COLUMN_MOVIE_ID,
+                            MovieDBHelper.COLUMN_KEY_VIDEOS,
+                            MovieDBHelper.COLUMN_NAME_VIDEOS,
+
+                    },
+                    MovieDBHelper.TBL_VIDEOS + "." +  MovieDBHelper.COLUMN_MOVIE_ID + " = ?",
+                    new String[] {String.valueOf(movieID)},
+                    null
+            );
+
            }
         return null;
     }
@@ -278,6 +295,13 @@ public class DetailMovieActivity extends AppCompatActivity implements
                 tvTitle.setText(title);
                 tvRating.setText(String.valueOf(cursor.getDouble(5)) + "/10");
                 tvDesc.setText(cursor.getString(1));
+                if(cursor.getInt(9) == 1){
+                    tv_add_fav.setText("Not Favourite");
+                    btnfav.setFavorite(true);
+                }else{
+                    tv_add_fav.setText("Add Favourite");
+                    btnfav.setFavorite(false);
+                }
 
                 getSupportActionBar().setTitle(title);
             }else{
@@ -294,5 +318,36 @@ public class DetailMovieActivity extends AppCompatActivity implements
         if(loader.getId() == LOADER_VIDEOS){
             videosAdapter.updateList(null);
         }
+    }
+
+    private void addFav(boolean state){
+        Uri uri = Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_MOVIE_DETAIL
+                + "/" + movieID);
+        Cursor cursor = getContentResolver().query(uri ,
+                new String[]{
+                        MovieDBHelper.COLUMN_AS_FAVOURITE
+                },
+                MovieDBHelper.TBL_MOVIE_DETAIL + "." + MovieDBHelper.COLUMN_MOVIE_ID + " = ? ",
+                new String[]{String.valueOf(movieID)},
+                null
+        );
+        ContentValues cv = new ContentValues();
+
+        if(cursor.getCount() > 0) {
+            if(state){
+                cv.put(MovieDBHelper.COLUMN_AS_FAVOURITE , 1);
+                tv_add_fav.setText("Not Favourite");
+            }else{
+                cv.put(MovieDBHelper.COLUMN_AS_FAVOURITE , 0);
+                tv_add_fav.setText("Add Favourite");
+            }
+            getContentResolver().update(uri ,
+                    cv,
+                    MovieDBHelper.TBL_MOVIE_DETAIL + "." + MovieDBHelper.COLUMN_MOVIE_ID + " = ? ",
+                    new String[]{String.valueOf(movieID)}
+            );
+            getContentResolver().notifyChange(uri, null);
+        }
+
     }
 }

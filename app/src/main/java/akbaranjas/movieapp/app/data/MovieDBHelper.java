@@ -52,8 +52,7 @@ public class MovieDBHelper extends SQLiteOpenHelper {
     private static final String CREATE_TBL_VIDEOS ="create table " + TBL_VIDEOS + " (" +
             COLUMN_MOVIE_ID + " int, " +
             COLUMN_KEY_VIDEOS + " text, " +
-            COLUMN_NAME_VIDEOS + " text, " +
-            "unique ("+ COLUMN_MOVIE_ID + ") on conflict replace);";
+            COLUMN_NAME_VIDEOS + " text);";
 
     public MovieDBHelper(Context context) {
         super(context, MOVIE_DB, null, VERSION);
