@@ -175,12 +175,12 @@ public class MovieProvider extends ContentProvider {
 
     @Override
     public int bulkInsert(Uri uri, ContentValues[] values) {
+        SQLiteDatabase writableDatabase= movieDBHelper.getWritableDatabase();
         switch (uriMatcher.match(uri)) {
 
             case MOVIE_LIST:
                 int returnCount = 0;
 
-                SQLiteDatabase writableDatabase= movieDBHelper.getWritableDatabase();
                 writableDatabase.beginTransaction();
                 try {
                     for (ContentValues cv : values) {
@@ -205,24 +205,23 @@ public class MovieProvider extends ContentProvider {
             case MOVIE_VIDEOS:
                 int count = 0;
 
-                SQLiteDatabase db= movieDBHelper.getWritableDatabase();
-                db.beginTransaction();
+                writableDatabase.beginTransaction();
                 try {
                     for (ContentValues cv : values) {
-                        db.insert(
+                        writableDatabase.insert(
                                 MovieDBHelper.TBL_VIDEOS,
                                 null,
                                 cv
                         );
                         count++;
                     }
-                    db.setTransactionSuccessful();
+                    writableDatabase.setTransactionSuccessful();
                 }
                 catch (Exception e) {
                     count = 0;
                 }
                 finally {
-                    db.endTransaction();
+                    writableDatabase.endTransaction();
                 }
                 return count;
         }

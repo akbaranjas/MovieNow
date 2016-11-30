@@ -50,6 +50,7 @@ public class DetailMovieActivity extends AppCompatActivity implements
 
     public static final String EXTRA_MOVIE_ID = "movie_id";
     public static final int LOADER_DETAIL_MOVIE = 100;
+    public static final int LOADER_VIDEOS = 200;
     private int movieID;
     private ImageView imgCoverHeader;
     private ImageView imgPosterHeader;
@@ -87,6 +88,8 @@ public class DetailMovieActivity extends AppCompatActivity implements
         bottomLayout = (RelativeLayout) findViewById(R.id.loadingLayout);
 
         getLoaderManager().initLoader(LOADER_DETAIL_MOVIE, null, this);
+        getLoaderManager().initLoader(LOADER_VIDEOS, null, this);
+
         this.init();
 
         //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -130,20 +133,12 @@ public class DetailMovieActivity extends AppCompatActivity implements
             public void onResponse(Call<Videos> call, Response<Videos> response) {
                 int statusCode = response.code();
                 if(statusCode==200) {
-
                     if(videosList != null){
                         videosList.clear();
                     }
-
                     videosList = response.body().getResults();
+                    insertVideos(videosList);
 
-                    insertVideos(videosList, response.body().getId());
-
-                    videosAdapter.updateList(videosList);
-                    //movieGridAdapter.notifyItemRangeInserted(0, movies.size() - 1);
-                    videosAdapter.notifyDataSetChanged();
-
-                    //bottomLayout.setVisibility(View.GONE);
                 }else{
                     Toast.makeText(DetailMovieActivity.this,"Can't establish the connection, Response Code [" + statusCode + "]",Toast.LENGTH_SHORT).show();
                     bottomLayout.setVisibility(View.GONE);
@@ -192,24 +187,24 @@ public class DetailMovieActivity extends AppCompatActivity implements
         }
     }
 
-    private void insertVideos(List<ResultVideo> videos , int id){
+    private void insertVideos(List<ResultVideo> videos){
         ContentValues[] contentValues = new ContentValues[videos.size()];
         for(int i = 0;i < videos.size(); i++){
             ContentValues cv = new ContentValues();
-            cv.put(MovieDBHelper.COLUMN_MOVIE_ID, id);
+            cv.put(MovieDBHelper.COLUMN_MOVIE_ID, movieID);
             cv.put(MovieDBHelper.COLUMN_KEY_VIDEOS, videos.get(i).getKey());
             cv.put(MovieDBHelper.COLUMN_NAME_VIDEOS, videos.get(i).getName());
             contentValues[i] = cv;
         }
 
         Uri uri = Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_VIDEOS
-                + "/" + id);
+                + "/" + movieID);
         getContentResolver().delete(
                 uri,
                 MovieDBHelper.TBL_VIDEOS + "." + MovieDBHelper.COLUMN_MOVIE_ID
                         + " = ?"
                 ,
-                new String[] {String.valueOf(id)}
+                new String[] {String.valueOf(movieID)}
         );
         getContentResolver().bulkInsert(
                 uri,
@@ -243,11 +238,27 @@ public class DetailMovieActivity extends AppCompatActivity implements
                             MovieDBHelper.COLUMN_BACKDROP_PATH,
                             MovieDBHelper.COLUMN_POSTER_PATH
                     },
-                    MovieDBHelper.TBL_MOVIE_DETAIL + MovieDBHelper.COLUMN_MOVIE_ID + " = ?",
+                    MovieDBHelper.TBL_MOVIE_DETAIL +  "." + MovieDBHelper.COLUMN_MOVIE_ID + " = ?",
                     new String[] {String.valueOf(movieID)},
                     null
             );
-        }
+//        }else if (i == LOADER_VIDEOS){
+//            return new CursorLoader(
+//                    DetailMovieActivity.this,
+//                    Uri.parse("content://"+ getResources().getString(R.string.content_authority) + "/" + MovieDBHelper.TBL_VIDEOS
+//                            + "/" + movieID ),
+//                    new String[]{
+//                            MovieDBHelper.COLUMN_MOVIE_ID,
+//                            MovieDBHelper.COLUMN_KEY_VIDEOS,
+//                            MovieDBHelper.COLUMN_NAME_VIDEOS,
+//
+//                    },
+//                    MovieDBHelper.TBL_VIDEOS + "." +  MovieDBHelper.COLUMN_MOVIE_ID + " = ?",
+//                    new String[] {String.valueOf(movieID)},
+//                    null
+//            );
+//
+           }
         return null;
     }
 
@@ -255,8 +266,6 @@ public class DetailMovieActivity extends AppCompatActivity implements
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         if(loader.getId() == LOADER_DETAIL_MOVIE) {
             if (cursor != null && cursor.getCount() > 0) {
-
-                //cursor is always 1
                 cursor.moveToPosition(0);
                 title = cursor.getString(2);
                 Picasso.with(DetailMovieActivity.this).load(MovieURL.BASE_URL_IMG + MovieURL.SIZE_IMAGE[3] + "/"
@@ -271,12 +280,19 @@ public class DetailMovieActivity extends AppCompatActivity implements
                 tvDesc.setText(cursor.getString(1));
 
                 getSupportActionBar().setTitle(title);
+            }else{
+                init();
             }
+        }else if(loader.getId() == LOADER_VIDEOS){
+            videosAdapter.updateList(cursor);
+            videosAdapter.notifyDataSetChanged();
         }
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
+        if(loader.getId() == LOADER_VIDEOS){
+            videosAdapter.updateList(null);
+        }
     }
 }

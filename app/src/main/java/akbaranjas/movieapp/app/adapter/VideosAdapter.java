@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -34,21 +35,24 @@ public class VideosAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     public static final int TYPE_HEADER = 0;
     public static final int TYPE_ITEM = 1;
-    private List<ResultVideo> videos;
+    public static final int CURSOR_TITLE_VIDEO = 2;
+    public static final int CURSOR_KEY_VIDEOS = 1;
+    Cursor cursor;
     Context context;
     private boolean mWithHeader;
     RecyclerView.ViewHolder mholder;
     OnPlayClickListener onPlayClickListener;
 
-    public VideosAdapter(Context context ,List<ResultVideo> videos, boolean withHeader, OnPlayClickListener onPlayClick) {
-        this.videos = videos;
+
+    public VideosAdapter(Context context ,Cursor cursor, boolean withHeader, OnPlayClickListener onPlayClick) {
+        this.cursor = cursor;
         this.context = context;
         this.mWithHeader = withHeader;
         this.onPlayClickListener = onPlayClick;
     }
 
-    public void updateList(List<ResultVideo> videos){
-        this.videos = videos;
+    public void updateList(Cursor c){
+        this.cursor = c;
     }
 
     @Override
@@ -78,11 +82,12 @@ public class VideosAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
+
         if (holder.getItemViewType() == TYPE_ITEM) {
             final ItemViewHolder mholder = (ItemViewHolder) holder;
             if(mWithHeader){
-
-                mholder.tv_title_videos.setText(videos.get(position-1).getName());
+                cursor.moveToPosition(position - 1);
+                mholder.tv_title_videos.setText(cursor.getString(CURSOR_TITLE_VIDEO));
 
 //                final YouTubeThumbnailLoader.OnThumbnailLoadedListener  onThumbnailLoadedListener = new YouTubeThumbnailLoader.OnThumbnailLoadedListener(){
 //                    @Override
@@ -115,7 +120,7 @@ public class VideosAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
                 youTubeThumbnailView.initialize(MovieURL.API_KEY_GOOGLE, new YouTubeThumbnailView.OnInitializedListener() {
                     @Override
                     public void onInitializationSuccess(YouTubeThumbnailView youTubeThumbnailView, final YouTubeThumbnailLoader youTubeThumbnailLoader) {
-                        youTubeThumbnailLoader.setVideo(videos.get(position - 1).getKey());
+                        youTubeThumbnailLoader.setVideo(cursor.getString(CURSOR_KEY_VIDEOS));
                         youTubeThumbnailLoader.setOnThumbnailLoadedListener(new YouTubeThumbnailLoader.OnThumbnailLoadedListener() {
                             @Override
                             public void onThumbnailLoaded(YouTubeThumbnailView youTubeThumbnailView, String s) {
@@ -142,11 +147,11 @@ public class VideosAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     @Override
     public int getItemCount() {
-        if(videos != null) {
+        if(cursor != null) {
             if(mWithHeader){
-                return videos.size() + 1;
+                return cursor.getCount() + 1;
             }else{
-                return videos.size();
+                return cursor.getCount();
             }
         }else {
             return 0;
@@ -180,7 +185,8 @@ public class VideosAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         @Override
         public void onClick(View view) {
             int positition = getAdapterPosition();
-            onPlayClickListener.onYoutubeClick(videos.get(positition-1).getKey());
+            cursor.moveToPosition(positition - 1);
+            onPlayClickListener.onYoutubeClick(cursor.getString(CURSOR_KEY_VIDEOS));
         }
     }
 }
