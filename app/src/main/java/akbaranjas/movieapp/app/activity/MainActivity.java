@@ -94,6 +94,9 @@ public class MainActivity extends AppCompatActivity implements OnMovieClickListe
             Intent i = new Intent(this, PrefActivity.class);
             startActivity(i);
 
+        }else if(id == R.id.action_fav){
+            Intent i = new Intent(this, FavouriteActivity.class);
+            startActivity(i);
         }
 
         return super.onOptionsItemSelected(item);

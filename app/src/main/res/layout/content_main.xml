@@ -108,8 +108,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_below="@+id/img_header_cover"
-                        android:layout_toRightOf="@+id/linear_rating">
+                        android:layout_below="@+id/linear_rating"
+                        android:layout_toRightOf="@+id/img_poster_header"
+                        android:gravity="right">
 
                         <com.github.ivbaranov.mfb.MaterialFavoriteButton
                             android:id="@+id/btn_add_fav"
@@ -122,14 +123,8 @@
                             app:mfb_bounce_duration="300"
                             app:mfb_favorite_image="@mipmap/ic_action_favorite"
                             app:mfb_not_favorite_image="@mipmap/ic_action_favorite_outline"
-                            android:layout_gravity="center_vertical"/>
+                            android:layout_gravity="center_horizontal"/>
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:id="@+id/tv_fav"
-                            android:textSize="10sp"
-                            android:layout_gravity="center_vertical"/>
                     </LinearLayout>
 
                     <TextView

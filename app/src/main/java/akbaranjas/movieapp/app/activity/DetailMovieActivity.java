@@ -7,12 +7,10 @@ import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -66,7 +64,6 @@ public class DetailMovieActivity extends AppCompatActivity implements
     private static RecyclerView rv_videos;
     private static VideosAdapter videosAdapter;
     private MaterialFavoriteButton btnfav;
-    private TextView tv_add_fav;
     List<ResultVideo> videosList;
 
     @Override
@@ -84,7 +81,6 @@ public class DetailMovieActivity extends AppCompatActivity implements
         tvRating = (TextView) findViewById(R.id.tv_rating_movie_detail);
         tvDesc = (TextView) findViewById(R.id.tv_desc_detail);
         rv_videos = (RecyclerView) findViewById(R.id.recycler_view_videos);
-        tv_add_fav = (TextView) findViewById(R.id.tv_fav);
 
         btnfav = (MaterialFavoriteButton) findViewById(R.id.btn_add_fav);
 
@@ -296,10 +292,8 @@ public class DetailMovieActivity extends AppCompatActivity implements
                 tvRating.setText(String.valueOf(cursor.getDouble(5)) + "/10");
                 tvDesc.setText(cursor.getString(1));
                 if(cursor.getInt(9) == 1){
-                    tv_add_fav.setText("Not Favourite");
                     btnfav.setFavorite(true);
                 }else{
-                    tv_add_fav.setText("Add Favourite");
                     btnfav.setFavorite(false);
                 }
 
@@ -336,10 +330,8 @@ public class DetailMovieActivity extends AppCompatActivity implements
         if(cursor.getCount() > 0) {
             if(state){
                 cv.put(MovieDBHelper.COLUMN_AS_FAVOURITE , 1);
-                tv_add_fav.setText("Not Favourite");
             }else{
                 cv.put(MovieDBHelper.COLUMN_AS_FAVOURITE , 0);
-                tv_add_fav.setText("Add Favourite");
             }
             getContentResolver().update(uri ,
                     cv,

@@ -19,6 +19,7 @@ public class MovieProvider extends ContentProvider {
     public static final int MOVIE_LIST = 100;
     public static final int MOVIE_DETAIL = 200;
     public static final int MOVIE_VIDEOS = 300;
+    public static final int MOVIE_FAV = 400;
     MovieDBHelper movieDBHelper;
     UriMatcher uriMatcher;
 
@@ -30,6 +31,7 @@ public class MovieProvider extends ContentProvider {
         uriMatcher.addURI(content_authority , MovieDBHelper.TBL_MOVIE + "/#", MOVIE_LIST);
         uriMatcher.addURI(content_authority, MovieDBHelper.TBL_MOVIE_DETAIL + "/#", MOVIE_DETAIL);
         uriMatcher.addURI(content_authority, MovieDBHelper.TBL_VIDEOS + "/#", MOVIE_VIDEOS);
+        uriMatcher.addURI(content_authority, MovieDBHelper.TBL_MOVIE_DETAIL + "/FAV/#", MOVIE_FAV);
         return true;
     }
 
@@ -77,6 +79,19 @@ public class MovieProvider extends ContentProvider {
                 );
                 retCursor.setNotificationUri(getContext().getContentResolver(), uri);
                 break;
+
+            case MOVIE_FAV:
+                retCursor = movieDBHelper.getReadableDatabase().query(
+                        MovieDBHelper.TBL_MOVIE_DETAIL,
+                        projection,
+                        MovieDBHelper.TBL_MOVIE_DETAIL + "." + MovieDBHelper.COLUMN_AS_FAVOURITE + " = ?",
+                        new String[] { uri.getLastPathSegment() },
+                        null,
+                        null,
+                        sortorder
+                );
+                retCursor.setNotificationUri(getContext().getContentResolver(), uri);
+                break;
         }
 
         return retCursor;
@@ -96,6 +111,9 @@ public class MovieProvider extends ContentProvider {
             case MOVIE_VIDEOS:
                 return ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + String.valueOf(R.string.content_authority) + "/"
                         + MovieDBHelper.TBL_VIDEOS + "/";
+            case MOVIE_FAV:
+                return ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + String.valueOf(R.string.content_authority) + "/"
+                        + MovieDBHelper.TBL_MOVIE_DETAIL + "/FAV/";
         }
         return null;
     }
