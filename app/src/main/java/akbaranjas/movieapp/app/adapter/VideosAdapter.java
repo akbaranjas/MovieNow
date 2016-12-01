@@ -109,10 +109,11 @@ public class VideosAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 //                    }
 //                });
                 final YouTubeThumbnailView youTubeThumbnailView = mholder.youTubeThumbnailView;
+                final String keyVideo = cursor.getString(1);
                 youTubeThumbnailView.initialize(MovieURL.API_KEY_GOOGLE, new YouTubeThumbnailView.OnInitializedListener() {
                     @Override
                     public void onInitializationSuccess(YouTubeThumbnailView youTubeThumbnailView, final YouTubeThumbnailLoader youTubeThumbnailLoader) {
-                        youTubeThumbnailLoader.setVideo(cursor.getString(CURSOR_KEY_VIDEOS));
+                        youTubeThumbnailLoader.setVideo(keyVideo);
                         youTubeThumbnailLoader.setOnThumbnailLoadedListener(new YouTubeThumbnailLoader.OnThumbnailLoadedListener() {
                             @Override
                             public void onThumbnailLoaded(YouTubeThumbnailView youTubeThumbnailView, String s) {
